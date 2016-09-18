@@ -10,7 +10,8 @@ using System.Text;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-
+//залечь на дно 
+//сделать псевдорандом
 namespace BotGame
 {
     public class Mission
@@ -61,9 +62,9 @@ namespace BotGame
                 if ((l == null) || (l == "s"))
                 {
                     var p = System.Web.HttpContext.Current.Request.MapPath("~/Data/missions.json");
-                    var temp = JsonConvert.DeserializeObject<MissionCollection>(File.ReadAllText(p));
-                    missionM = temp.dataM;
-                    missionA = temp.dataA;
+                    var temp1 = JsonConvert.DeserializeObject<MissionCollection>(File.ReadAllText(p));
+                    missionM = temp1.dataM;
+                    missionA = temp1.dataA;
                     // закончил создавать миссии
                     UserData.SetProperty<List<Mission>>("missionM", missionM);
                     UserData.SetProperty<List<Mission>>("missionA", missionA);
@@ -84,8 +85,12 @@ namespace BotGame
                     UserData.SetProperty<int>("nm", 5);
                     UserData.SetProperty<int>("choose", 0);
                     UserData.SetProperty<string>("ng", "old");
-                    UserData.SetProperty<int>("eWin", 0); 
-                    msg = "Здравствуйте, сэр! Вас приветствует консоль управления вашими подчиненными \U0001f479. Здесь вы можете посылать подчиненных на задания и вербовать новых \U0001f479.\n\nПомните: чем больше \U0001f479 вы пошлете на задание, тем выше вероятность его успешного завершения, но стоимость выполнения\U0001f4B0 или внимание властей \U0001f46e также повысится.\n\n Оставшиеся \U0001f479 будут защищать вашу базу. Помните: чем больше \U0001f46e, тем сложнее будет защитить базу. \n\n P.S. Чтобы начать новую игру - введите любой текст вместо цифр";
+                    UserData.SetProperty<int>("eWin", 0);
+                    UserData.SetProperty<int>("aprt", 3);                    
+                    msg = "Здравствуйте, босс! Вся мафия ждала вашего возвращения. Вы можете посылать ваших подчиненных \U0001f479 на задания и вербовать новых \U0001f479." +
+                        "\n\nПомните: чем больше \U0001f479 вы пошлете на задание, тем выше вероятность его успешного завершения, но внимание властей \U0001f46e также повысится пропорционально."+
+                        "\n\n Оставшиеся \U0001f479 будут защищать вашу базу. Помните: чем больше \U0001f46e, тем сложнее будет защитить базу."+
+                        "\n\n P.S. Чтобы начать новую игру - введите любой текст вместо цифр.\n\n_________________________________________________";
                 }
                 //выгрузка параметров (после того, как решено, новая игра или же нет)
                 var lose = UserData.GetProperty<string>("lose");
@@ -94,6 +99,8 @@ namespace BotGame
                 var nm = UserData.GetProperty<int>("nm");
                 var choose = UserData.GetProperty<int>("choose");
                 var eWin = UserData.GetProperty<int>("eWin");
+                var aprt = UserData.GetProperty<int>("aprt");
+                int temp = 0;
                 //проверка на проигрыш
                 int number;
                 bool result = Int32.TryParse(activity.Text, out number);
@@ -103,20 +110,48 @@ namespace BotGame
                     UserData.SetProperty<string>("l", "s");
                     if (eWin >= 100)
                     {
-                        msg = "\n\nВся страна ваша, мой господин! Властвуйте и процветайте!";
+                        msg = "\n\nВся страна ваша, босс! Наслаждайтесь властью!";
                     }
                     else
                     {
-                        msg = "\n\nВаша база была уничтожена. Нажмите любую цифру для продолжения\n\n________\n\nПомогите разнообразить проект - перейдите по этому опросу и предложите свои идеи, что может делать глава мафиозного клана\n\n https://goo.gl/forms/LyEDiywbR9ecn3ds1";
+                        msg = "\n\nВаша база была захвачена. Нажмите любую цифру для продолжения\n\n________\n\nПрисылайте ваши предложения, замечания, найденные баги - arfr@live.ru";
                     }
                 }
                 //основная часть игры
-                else
+                else 
                 {
                     int price = 0;
                     if ((choose == 0) && (msg == ""))
                     {
                         choose = Convert.ToInt32(activity.Text);
+                        if (choose == 8)
+                        {                            
+                            if (aprt > 0)
+                            {
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    mission5[i].doneflag = 0;
+                                    missionM[mission5[i].id].doneflag = 0;
+                                }
+                                for (int i = 3; i < 5; i++)
+                                {
+                                    mission5[i].doneflag = 0;
+                                    missionA[mission5[i].id].doneflag = 0;
+                                }
+                                aprt = aprt - 1;
+                                awr = awr - 5;
+                                if (awr < 0)
+                                {
+                                    awr = 0;
+                                }
+                                msg += $"Все задания были обновлены, а \U0001f46e немного уменьшилось.  У вас осталось {aprt} секретных квартир.\n\n_________________________________________________";
+                            }
+                            else
+                            {
+                                msg += "У вас не осталось секретных квартир!\n\n_________________________________________________";
+                            }
+                            choose = 0;
+                        }
                     }
                     else
                     {
@@ -133,233 +168,79 @@ namespace BotGame
                             else
                             {
                                 int pAtt = Convert.ToInt32(activity.Text);
-                                int pDef = nm - pAtt;
-                                int buyM = mon - pAtt * 100;
+                                int pDef = nm - pAtt;                              
                                 int cod = 0;
                                 int awr1 = 0;
                                 int mon1 = 0;
                                 int cow = 0;
                                 int deadPeople = 0;
-
                                 switch (choose)
                                 {
                                     case 0:
                                         choose = 0;
                                         break;
-                                    case 1:
-                                        if (pDef < 0)
-                                        {
-                                            msg += "\n\nНедостаточно \U0001f479";
-                                            choose = 1;
-                                        }
-                                        else
-                                        {                                           
-                                            cod = awr - 3 * pDef;
-                                            for (int i = 0; i < pDef; i++)
-                                            {
-
-                                                if (random.Next(100) < cod)
-                                                {
-                                                    deadPeople++;
-                                                }
-                                            }
-                                            if (pDef - deadPeople <= 0)
-                                            {
-                                                msg += $" Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.";
-                                                choose = 8;
-                                            }
-                                            else
-                                            {
-                                                msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
-                                                cod = 0;
-                                                switch (mission5[0].dif)
-                                                {
-                                                    case "легко":
-                                                        awr1 = 5;
-                                                        mon1 = 100;
-                                                        cow = 30;
-                                                        cod = 30 - 4 * pAtt;
-                                                        break;
-                                                    case "средне":
-                                                        awr1 = 4;
-                                                        mon1 = 500;
-                                                        cow = 10;
-                                                        cod = 40 - 2 * pAtt;
-                                                        break;
-                                                    case "тяжело":
-                                                        awr1 = 3;
-                                                        mon1 = 1200;
-                                                        cow = 5;
-                                                        cod = 50 - 2 * pAtt;
-                                                        break;
-                                                }
-                                                nm = nm - deadPeople;
-                                                deadPeople = 0;
-                                                awr += awr1 * pAtt;
-
-                                                var r = random.Next(100);
-                                                if ((r < cow * pAtt) && (r < 90))
-                                                {
-                                                    mon += mon1;
-                                                    msg += $"\n\n\U0001f479 выполнили миссию, награда - {mon1} \U0001f4B0.";
-                                                }
-                                                else
-                                                {
-                                                    msg += $"\n\n\U0001f479 провалили миссию.";
-                                                }
-
-                                                for (int i = 0; i < pAtt; i++)
-                                                {
-                                                    if (random.Next(100) < cod)
-                                                    {
-                                                        deadPeople++;
-                                                    }
-                                                }
-                                                msg += $"\n\nНа задании погибло {deadPeople} \U0001f479.";
-                                                nm = nm - deadPeople;
-                                                mission5[0].doneflag = -1;
-                                                missionM[mission5[0].id].doneflag = -1;
-                                                choose = 0;
-                                            }
-                                        }
-                                        break;
+                                    case 1:                                        
                                     case 2:
-                                        if (pDef < 0)
-                                        {
-                                            msg += "\n\nНедостаточно \U0001f479";
-                                            choose = 2;
-                                        }
-                                        else
-                                        {                                            
-                                            cod = awr - 3 * pDef;
-                                            for (int i = 0; i < pDef; i++)
-                                            {
-
-                                                if (random.Next(100) < cod)
-                                                {
-                                                    deadPeople++;
-                                                }
-                                            }
-                                            if (pDef - deadPeople <= 0)
-                                            {
-                                                msg += $" Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.";
-                                                choose = 8;
-                                            }
-                                            else
-                                            {
-                                                msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
-                                                cod = 0;
-                                                switch (mission5[1].dif)
-                                                {
-                                                    case "легко":
-                                                        awr1 = 5;
-                                                        mon1 = 100;
-                                                        cow = 30;
-                                                        cod = 30 - 4 * pAtt;
-                                                        break;
-                                                    case "средне":
-                                                        awr1 = 4;
-                                                        mon1 = 500;
-                                                        cow = 10;
-                                                        cod = 40 - 2 * pAtt;
-                                                        break;
-                                                    case "тяжело":
-                                                        awr1 = 3;
-                                                        mon1 = 1200;
-                                                        cow = 5;
-                                                        cod = 50 - 2 * pAtt;
-                                                        break;
-                                                }
-                                                nm = nm - deadPeople;
-                                                deadPeople = 0;
-                                                awr += awr1 * pAtt;
-
-                                                var r = random.Next(100);
-                                                if ((r < cow * pAtt) && (r < 90))
-                                                {
-                                                    mon += mon1;
-                                                    msg += $"\n\n\U0001f479 выполнили миссию, награда - {mon1} \U0001f4B0.";
-                                                }
-                                                else
-                                                {
-                                                    msg += $"\n\n\U0001f479 провалили миссию.";
-                                                }
-
-                                                for (int i = 0; i < pAtt; i++)
-                                                {
-                                                    if (random.Next(100) < cod)
-                                                    {
-                                                        deadPeople++;
-                                                    }
-                                                }
-                                                msg += $"\n\nНа задании погибло {deadPeople} \U0001f479.";
-                                                nm = nm - deadPeople;
-                                                mission5[1].doneflag = -1;
-                                                missionM[mission5[1].id].doneflag = -1;
-                                                choose = 0;
-                                            }
-                                        }
-                                        break;
                                     case 3:
+                                        temp = choose;
                                         if (pDef < 0)
                                         {
-                                            msg += "\n\nНедостаточно \U0001f479";
-                                            choose = 3;
+                                            msg += "\n\nНедостаточно \U0001f479 \n\n_________________________________________________";
+                                            choose = temp;
                                         }
                                         else
-                                        {                                           
+                                        {
                                             cod = awr - 3 * pDef;
                                             for (int i = 0; i < pDef; i++)
                                             {
-
                                                 if (random.Next(100) < cod)
                                                 {
                                                     deadPeople++;
                                                 }
                                             }
-                                            if (pDef - deadPeople <= 0)
+                                            if ((awr>0)&&(pDef - deadPeople <= 0))
                                             {
-                                                msg += $" Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.";
-                                                choose = 8;
+                                                msg += $"Пытаясь вас защитить, погибли все защитники \U0001f479.\n\n_________________________________________________";
+                                                choose = 9;
                                             }
                                             else
                                             {
-                                                msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
+                                                if (awr > 0) { msg += $"Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.\n\n_________________________________________________"; }
+                                                else { msg += $"Повезло, что власти нами не интересуются и нас сегодня никто не штурмовал.\n\n_________________________________________________"; }                                                
                                                 cod = 0;
-                                                switch (mission5[2].dif)
+                                                switch (mission5[temp-1].dif)
                                                 {
                                                     case "легко":
-                                                        awr1 = 5;
-                                                        mon1 = 100;
+                                                        awr1 = 4;
+                                                        mon1 = 150;
                                                         cow = 30;
-                                                        cod = 30 - 4 * pAtt;
+                                                        cod = 20 - 4 * pAtt;
                                                         break;
                                                     case "средне":
-                                                        awr1 = 4;
-                                                        mon1 = 500;
-                                                        cow = 10;
-                                                        cod = 40 - 2 * pAtt;
+                                                        awr1 = 3;
+                                                        mon1 = 400;
+                                                        cow = 14;
+                                                        cod = 30 - 3 * pAtt;
                                                         break;
                                                     case "тяжело":
-                                                        awr1 = 3;
-                                                        mon1 = 1200;
-                                                        cow = 5;
-                                                        cod = 50 - 2 * pAtt;
+                                                        awr1 = 2;
+                                                        mon1 = 900;
+                                                        cow = 10;
+                                                        cod = 40 - 3 * pAtt;
                                                         break;
                                                 }
                                                 nm = nm - deadPeople;
                                                 deadPeople = 0;
                                                 awr += awr1 * pAtt;
-
                                                 var r = random.Next(100);
-                                                if ((r < cow * pAtt) && (r < 90))
+                                                if ((r < (cow * pAtt)) && (r < 95))
                                                 {
                                                     mon += mon1;
-                                                    msg += $"\n\n\U0001f479 выполнили миссию, награда - {mon1} \U0001f4B0.";
+                                                    msg += $"\n\nМиссия выполнена, награда - {mon1} \U0001f4B0.";
                                                 }
                                                 else
                                                 {
-                                                    msg += $"\n\n\U0001f479 провалили миссию.";
+                                                    msg += $"\n\nМиссия провалена.";
                                                 }
 
                                                 for (int i = 0; i < pAtt; i++)
@@ -369,126 +250,45 @@ namespace BotGame
                                                         deadPeople++;
                                                     }
                                                 }
-                                                msg += $"\n\nНа задании погибло {deadPeople} \U0001f479.";
+                                                msg += $" На задании погибло {deadPeople} \U0001f479.\n\n_________________________________________________";
                                                 nm = nm - deadPeople;
-                                                mission5[2].doneflag = -1;
-                                                missionM[mission5[2].id].doneflag = -1;
+                                                mission5[temp-1].doneflag = -1;
+                                                missionM[mission5[temp-1].id].doneflag = -1;
                                                 choose = 0;
                                             }
                                         }
                                         break;
-                                    case 4:
-                                        switch (mission5[3].dif)
-                                        {
-                                            case "легко":
-                                                awr1 = 15;
-                                                mon1 = 15;
-                                                cow = 30;
-                                                cod = 20 - 4 * pAtt;
-                                                price = 50;
-                                                break;
-                                            case "средне":
-                                                awr1 = 25;
-                                                mon1 = 25;
-                                                cow = 10;
-                                                cod = 30 - 2 * pAtt;
-                                                price = 45;
-                                                break;
-                                            case "тяжело":
-                                                awr1 = 40;
-                                                mon1 = 40;
-                                                cow = 5;
-                                                cod = 40 - 2 * pAtt;
-                                                price = 40;
-                                                break;
-                                        }
-                                        if ((pDef < 0) || (mon - price * pAtt < 0))
-                                        {
-                                            msg += "\n\nНе хватает \U0001f479 или \U0001f4B0.";
-                                            choose = 4;
-                                        }
-                                        else
-                                        {
-                                            int cod1 = awr - 3 * pDef;                                            
-                                            for (int i = 0; i < pDef; i++)
-                                            {
-
-                                                if (random.Next(100) < cod1)
-                                                {
-                                                    deadPeople++;
-                                                }
-                                            }
-                                            if (pDef - deadPeople <= 0)
-                                            {
-                                                msg += $" Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.";
-                                                choose = 8;
-                                            }
-                                            else
-                                            {
-                                                msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
-                                                nm = nm - deadPeople;
-                                                deadPeople = 0;
-                                                mon -= price * pAtt;
-
-                                                var r = random.Next(100);
-                                                if ((r < cow * pAtt) && (r < 90))
-                                                {
-                                                    awr -= awr1;
-                                                    if (awr < 0)
-                                                    {
-                                                        awr = 0;
-                                                    }
-                                                    msg += $"\n\n\U0001f479 выполнили миссию, снижение - {awr1}% \U0001f46e";
-                                                }
-                                                else
-                                                {
-                                                    msg += $"\n\n\U0001f479 провалили миссию.";
-                                                }
-
-                                                for (int i = 0; i < pAtt; i++)
-                                                {
-                                                    if (random.Next(100) < cod)
-                                                    {
-                                                        deadPeople++;
-                                                    }
-                                                }
-                                                msg += $"\n\nНа задании погибло {deadPeople} \U0001f479.";
-                                                nm = nm - deadPeople;
-                                                mission5[3].doneflag = -1;
-                                                missionA[mission5[3].id].doneflag = -1;
-                                                choose = 0;
-                                            }
-                                        }
-                                        break;
+                                    case 4:                                        
                                     case 5:
-                                        switch (mission5[4].dif)
+                                        temp = choose;
+                                        switch (mission5[temp-1].dif)
                                         {
                                             case "легко":
-                                                awr1 = 25;
-                                                mon1 = 15;
+                                                awr1 = 20;
+                                                mon1 = 20;
                                                 cow = 30;
                                                 cod = 20 - 4 * pAtt;
                                                 price = 50;
                                                 break;
                                             case "средне":
-                                                awr1 = 40;
-                                                mon1 = 25;
-                                                cow = 10;
-                                                cod = 30 - 2 * pAtt;
+                                                awr1 = 35;
+                                                mon1 = 35;
+                                                cow = 14;
+                                                cod = 30 - 3 * pAtt;
                                                 price = 45;
                                                 break;
                                             case "тяжело":
-                                                awr1 = 60;
-                                                mon1 = 40;
-                                                cow = 5;
-                                                cod = 40 - 2 * pAtt;
+                                                awr1 = 50;
+                                                mon1 = 50;
+                                                cow = 10;
+                                                cod = 40 - 3 * pAtt;
                                                 price = 40;
                                                 break;
                                         }
                                         if ((pDef < 0) || (mon - price * pAtt < 0))
                                         {
-                                            msg += "\n\nНе хватает \U0001f479 или \U0001f4B0";
-                                            choose = 5;
+                                            msg += "\n\nНе хватает \U0001f479 или \U0001f4B0.\n\n_________________________________________________";
+                                            choose = temp;
                                         }
                                         else
                                         {
@@ -501,31 +301,32 @@ namespace BotGame
                                                     deadPeople++;
                                                 }
                                             }
-                                            if (pDef - deadPeople <= 0)
+                                             if ((awr>0)&&(pDef - deadPeople <= 0))
                                             {
-                                                msg += $" Пытаясь вас защитить, погибли все ({pDef}) защитники \U0001f479.";
-                                                choose = 8;
+                                                msg += $"Пытаясь вас защитить, погибли все защитники \U0001f479.\n\n_________________________________________________";
+                                                choose = 9;
                                             }
                                             else
                                             {
-                                                msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
+                                                if (awr > 0) { msg += $"Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.\n\n_________________________________________________"; }
+                                                else { msg += $"Повезло, что власти нами не интересуются и нас сегодня никто не штурмовал.\n\n_________________________________________________"; }   
                                                 nm = nm - deadPeople;
                                                 deadPeople = 0;
                                                 mon -= price * pAtt;
 
                                                 var r = random.Next(100);
-                                                if ((r < cow * pAtt) && (r < 90))
+                                                if ((r < (cow * pAtt)) && (r < 95))
                                                 {
                                                     awr -= awr1;
                                                     if (awr < 0)
                                                     {
                                                         awr = 0;
                                                     }
-                                                    msg += $"\n\n\U0001f479 выполнили миссию, снижение - {awr1}% \U0001f46e";
+                                                    msg += $"\n\nМиссия выполнена, снижение - {awr1}% \U0001f46e";
                                                 }
                                                 else
                                                 {
-                                                    msg += $"\n\n\U0001f479 провалили миссию.";
+                                                    msg += $"\n\nМиссия провалена.";
                                                 }
 
                                                 for (int i = 0; i < pAtt; i++)
@@ -535,10 +336,10 @@ namespace BotGame
                                                         deadPeople++;
                                                     }
                                                 }
-                                                msg += $"\n\nНа задании погибло {deadPeople} \U0001f479.";
+                                                msg += $" На задании погибло {deadPeople} \U0001f479.\n\n_________________________________________________";
                                                 nm = nm - deadPeople;
-                                                mission5[4].doneflag = -1;
-                                                missionA[mission5[4].id].doneflag = -1;
+                                                mission5[temp-1].doneflag = -1;
+                                                missionA[mission5[temp-1].id].doneflag = -1;
                                                 choose = 0;
                                             }
                                         }
@@ -546,14 +347,14 @@ namespace BotGame
                                     case 6:
                                         if (mon - pAtt * 100 < 0)
                                         {
-                                            msg += "\n\nУ вас нет столько \U0001f4B0.";
+                                            msg += "\n\nУ вас нет столько \U0001f4B0.\n\n_________________________________________________";
                                             choose = 6;
                                         }
                                         else
                                         {
                                             mon = mon - pAtt * 100;
                                             nm = nm + pAtt;
-                                            awr += 5;
+                                            awr += 3*pAtt;
                                             choose = 0;
                                         }
                                         break;
@@ -561,7 +362,7 @@ namespace BotGame
                                         deadPeople = 0;
                                         if ((pDef < 0) || (mon - 150 * pAtt < 0))
                                         {
-                                            msg += "\n\nУ вас нет столько \U0001f479 или \U0001f4B0";
+                                            msg += "\n\nУ вас нет столько \U0001f479 или \U0001f4B0.\n\n_________________________________________________";
                                             choose = 7;
                                         }
                                         else
@@ -574,7 +375,7 @@ namespace BotGame
                                                 {
                                                     eWin += random.Next(6);
                                                 }
-                                                if (random.Next(100) < 50 - 2 * pAtt)
+                                                if (random.Next(100) < 40 - 3 * pAtt)
                                                 {
                                                     deadPeople++;
                                                 }
@@ -585,11 +386,11 @@ namespace BotGame
                                             deadPeople = 0;
                                             if (eWin >= 100)
                                             {
-                                                choose = 8;
+                                                choose = 9;
                                             }
                                             else
                                             {
-                                                int cod1 = awr - 3 * pDef;                                               
+                                                int cod1 = awr - 3 * pDef;
                                                 for (int i = 0; i < pDef; i++)
                                                 {
 
@@ -600,12 +401,12 @@ namespace BotGame
                                                 }
                                                 if (pDef - deadPeople <= 0)
                                                 {
-                                                    msg += $" Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.";
-                                                    choose = 8;
+                                                    msg += $"Пытаясь вас защитить, погибли все({pDef}) защитники \U0001f479.\n\n_________________________________________________";
+                                                    choose = 9;
                                                 }
                                                 else
                                                 {
-                                                    msg += $" Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.";
+                                                    msg += $"Наши парни никому не дали добраться до вас. Погибло {deadPeople} из {pDef} защитников.\n\n_________________________________________________";
                                                     nm = nm - deadPeople;
                                                     choose = 0;
                                                 }
@@ -618,15 +419,12 @@ namespace BotGame
                                 }
                             }
                         }
-                    }
-                   
-                    string s1 = ".";
-                    
+                    }  
+                    //Вывод меню
                     switch (choose)
-                    {                        
-                        //основное меню
+                    {    
                         case 0:
-                            msg += "\n\n_____________________________________________\n\n\U0001f4B0: " + mon + " | | | \U0001f479: " + nm + " | | | \U0001f46e: " + awr + "% \n\n_____________________________________________";
+                            msg += "\n\n\U0001f4B0: " + mon + " | | | \U0001f479: " + nm + " | | | \U0001f46e: " + awr + "% \n\n_________________________________________________";
                             //заполняю строчки заданиями                            
                             for (var k = 0; k < 3; k++)
                             {
@@ -683,31 +481,27 @@ namespace BotGame
                             }
                                                    
                             for (int i = 0; i < 3; i++)
-                                msg += $"\n\n \U0001f4B0: {i + 1}. {mission5[i].shortMis} ({mission5[i].dif}) ";
+                                msg += $"\n\n({i + 1}) {mission5[i].shortMis} ({mission5[i].dif}) \U0001f4B0+";
                             for (int i = 3; i < 5; i++)
-                                msg += $"\n\n \U0001f46e: {i + 1}. {mission5[i].shortMis} ({mission5[i].dif}) ";
-                            msg += $"\n\n \U0001f479 6. Завербовать новичков";
-                            msg += $"\n\n \U0001f479 7. Захватить власть в стране! Власть захвачена на {eWin}% ";
+                                msg += $"\n\n({i + 1}) {mission5[i].shortMis} ({mission5[i].dif}) \U0001f46e-";
+                            msg += $"\n\n(6) Завербовать новичков  \U0001f479+";
+                            msg += $"\n\n(7) Захватить власть в стране! Власть захвачена на {eWin}% \U0001F3C6+";
+                            msg += $"\n\n(8) Отсидеться в секретной квартире. Осталось раз: {aprt}. \U000023f3+";
                             //выбираю задание
                             UserData.SetProperty<int>("choose", 0);
                             break;
-                        case 1:
-                            msg += $"\n\n\U0001f4B0: {mission5[0].capMis}. \n\nСложность - {mission5[0].dif}. Сколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
-                            msg += "\n\nУ вас " + nm + " \U0001f479.";
-                            UserData.SetProperty<int>("choose", 1);
-                            break;
-                        case 2:
-                            msg += $"\n\n\U0001f4B0: {mission5[1].capMis}. \n\nСложность - {mission5[1].dif}. Сколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
-                            msg += "\n\nУ вас " + nm + " \U0001f479.";
-                            UserData.SetProperty<int>("choose", 2);
-                            break;
+                        case 1:                            
+                        case 2:                           
                         case 3:
-                            msg += $"\n\n\U0001f4B0: {mission5[2].capMis}. \n\nСложность - {mission5[2].dif}. Сколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
+                            temp = choose;
+                            msg += $"\n\n\U0001f4B0: {mission5[temp-1].capMis}\n\n_________________________________________________\n\nСложность - {mission5[temp-1].dif}.\n\nСколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
                             msg += "\n\nУ вас " + nm + " \U0001f479.";
-                            UserData.SetProperty<int>("choose", 3);
+                            UserData.SetProperty<int>("choose", temp);
                             break;
                         case 4:                            
-                            switch (mission5[3].dif)
+                        case 5:
+                            temp = choose;                   
+                            switch (mission5[temp-1].dif)
                             {
                                 case "легко":
                                     price = 50;
@@ -719,50 +513,38 @@ namespace BotGame
                                     price = 40;
                                     break;
                             }
-                            msg += $"\n\n\U0001f46e: {mission5[3].capMis}. Сложность - {mission5[3].dif}. Стоимость участия каждого \U0001f479 - {price}\U0001f4B0. Сколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
-                            msg += "\n\nУ вас " + nm + " \U0001f479 " + "и "+mon+ " \U0001f4B0";
-                            UserData.SetProperty<int>("choose", 4);
-                            break;
-                        case 5:                           
-                            switch (mission5[4].dif)
-                            {
-                                case "легко":
-                                    price = 50;
-                                    break;
-                                case "средне":
-                                    price =45;
-                                    break;
-                                case "тяжело":
-                                    price = 40;
-                                    break;
-                            }
-                            msg += $"\n\n\U0001f46e: {mission5[4].capMis}. Сложность - {mission5[4].dif}. Стоимость участия каждого \U0001f479 - {price}\U0001f4B0. Сколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач";
+                            msg += $"\n\n\U0001f46e: {mission5[temp-1].capMis}\n\n_________________________________________________\n\nСложность - {mission5[temp-1].dif}. Стоимость участия каждого \U0001f479 - {price}\U0001f4B0. \n\nСколько \U0001f479 вы пошлете на задание? Выберите 0, чтобы вернуться к списку задач.";
                             msg += "\n\nУ вас " + nm + " \U0001f479 " + "и " + mon + " \U0001f4B0";
-                            UserData.SetProperty<int>("choose", 5);
+                            UserData.SetProperty<int>("choose", temp);
                             break;
                         case 6:
-                            msg += $"\n\nСтоимость найма одного \U0001f479 - 100 \U0001f4B0. При каждом найме \U0001f46e увеличивается на 5%. Сколько \U0001f479 вы хотите нанять? ";
-                            msg += "\n\nУ вас " + nm + " \U0001f479 и " + awr + "%  \U0001f46e";
+                            msg += $"\n\nСтоимость найма одного \U0001f479 - 100 \U0001f4B0. При каждом найме \U0001f46e увеличивается на 3%. Сколько \U0001f479 вы хотите нанять? ";
+                            msg += "\n\nУ вас " + nm + " \U0001f479, "+mon+ " \U0001f4B0  и " + awr + "%  \U0001f46e";
                             UserData.SetProperty<int>("choose", 6);
                             break;
                         case 7:
-                            msg += $"\n\nВы уверены, что готовы захватить власть в стране? Это очень сложный процесс! Сколько \U0001f479 вы хотите отправить? Стоимость участия каждого \U0001f479 - 150 \U0001f4B0";
-                            msg += "\n\nВ настоящий момент страна захвачена на "+eWin+"%, у вас " + nm + " \U0001f479 и " + awr + "% \U0001f46e";
+                            msg += $"\n\nВы уверены, что готовы захватить власть в стране? Это сложный и постепенный процесс! Сколько \U0001f479 вы хотите отправить? Стоимость участия каждого \U0001f479 - 150 \U0001f4B0";
+                            msg += "\n\nВ настоящий момент страна захвачена на "+eWin+ "%, у вас " + nm + " \U0001f479, " + mon + " \U0001f4B0  и " + awr + "%  \U0001f46e";
                             UserData.SetProperty<int>("choose", 7);
                             break;
                         case 8:
+                           
+                            break;
+                        case 9:
                             UserData.SetProperty<string>("ng", "new");
                             UserData.SetProperty<string>("l", "s");
                             if (eWin >= 100)
                             {
-                                msg = "\n\nВся страна ваша, мой господин! Властвуйте и процветайте!";
+                                msg += "\n\nВся страна ваша, босс! Наслаждайтесь властью!";
                             }
                             else
                             {
-                                msg = "\n\nВаша база была уничтожена. Нажмите любую цифру для продолжения";
+                                msg += "\n\nВаша база была захвачена. Нажмите любую цифру для продолжения\n\n________\n\nПрисылайте ваши предложения, замечания, найденные баги - arfr@live.ru";
                             }
                             break;
-
+                         default:
+                            UserData.SetProperty<int>("choose", 0);
+                            break;
                     }
                     UserData.SetProperty<List<Mission>>("missionM", missionM);
                     UserData.SetProperty<List<Mission>>("missionA", missionA);
@@ -772,6 +554,7 @@ namespace BotGame
                     UserData.SetProperty<int>("awr", awr);
                     UserData.SetProperty<int>("nm", nm);  
                     UserData.SetProperty<int>("eWin", eWin);
+                    UserData.SetProperty<int>("aprt", aprt);
                 }
                 Activity reply = activity.CreateReply(msg);
                 await State.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, UserData);
